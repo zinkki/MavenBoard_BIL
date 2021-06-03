@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+<mapper namespace="ino.web.freeBoard.mapper.FileBoardMapper">
+	
+	<!-- <select id = "freeBoardFileGetList" resultType="freeBoardFileDto">
+		SELECT seq, name, title, content, regdate, boardimagefile, boardimageName, boardimageOriName, boardimageUrl FROM FILEBOARD
+		ORDER BY LPAD (seq, 5) DESC
+	</select> -->
+ 	
+ 	<!-- <select id="freeBoardFileDetailByNum" resultType="freeBoardFileDto" parameterType="int">
+ 		SELECT seq, name, title, content, regdate, boardimagefile, boardimageName, boardimageOriName, boardimageUrl FROM
+ 		FILEBOARD WHERE seq = #{seq}
+ 	</select> -->
+ 	
+	<delete id="fileBoardDeletePro" parameterType="int">
+		DELETE FROM SEQUENCE_FREEBOARDFILE
+		WHERE SEQ = #{seq}
+	</delete>
+ 
+</mapper>

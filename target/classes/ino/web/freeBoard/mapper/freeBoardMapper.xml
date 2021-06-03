@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="ino.web.freeBoard.mapper.FreeBoardMapper">
+	
+	<!--  <select id="freeBoardGetList" resultType="freeBoardDto"> 
+		SELECT NUM, TITLE, NAME, TO_CHAR(REGDATE,'YYYY/MM/DD') REGDATE, CONTENT FROM FREEBOARD
+		WHERE between #{rowStart} and #{rowEnd} ORDER BY LPAD( NUM, 5 ) DESC
+	</select>  -->
+	 <select id="freeBoardGetList" resultType="freeBoardDto" parameterType="ino.web.freeBoard.dto.Criteria">
+	SELECT NUM, name, title, content, regdate
+	FROM ( SELECT NUM, name, title, content, regdate,
+        row_number() over(order by NUM desc) as rNum
+        from freeboard ) freeboard
+        where rNum between #{rowStart} and #{rowEnd}
+        order by NUM desc
+	</select>
+	<select id="listCount" resultType="int">
+		<![CDATA[
+		SELECT COUNT(NUM)
+		  FROM freeboard
+		 WHERE NUM > 0
+	]]>
+	</select>
+	
+	<select id="fileBoardGetList" resultType="freeBoardFileDto">
+		SELECT seq, title, name, regdate, content, boardimagefile,
+		 boardimageName, boardimageOriName, boardimageUrl   
+		FROM SEQUENCE_FREEBOARDFILE 
+		ORDER BY LPAD(seq, 5) DESC
+	</select>
+
+	
+	<insert id="freeBoardInsertPro" parameterType="freeBoardDto">
+		INSERT INTO FREEBOARD(NUM, TITLE, NAME, REGDATE, CONTENT)
+		VALUES( FREEBOARDNUM_SEQ.NEXTVAL, #{title}, #{name}, SYSDATE, #{content})
+		<selectKey keyProperty="NUM" resultType="int" order="AFTER">
+			SELECT NUM
+			FROM FREEBOARD
+			WHERE TITLE = #{title} AND NAME =  #{name} AND CONTENT = #{content}
+		</selectKey>
+	</insert> 
+	
+	<insert id="fileInsertPro" parameterType="freeBoardFileDto">
+		INSERT INTO SEQUENCE_FREEBOARDFILE (seq, title, name, regdate, content, boardimagefile, boardimageName, boardimageOriName, boardimageUrl )
+		VALUES(file_seq.nextval, #{title}, #{name}, sysdate, #{content}, #{boardimagefile},#{boardimageName}, #{boardimageOriName}, #{boardimageUrl})
+		<selectKey keyProperty="seq" resultType="int" order="AFTER">
+			SELECT seq
+			FROM SEQUENCE_FREEBOARDFILE
+			WHERE TITLE = #{title} AND NAME = #{name} AND CONTENT = #{content} AND boardimagefile = #{boardimagefile}
+		</selectKey>
+	</insert>
+	
+	<delete id="freeBoardDeletePro" parameterType="int">
+		DELETE FROM freeboard
+		WHERE NUM = #{num}
+	</delete>
+	
+	<delete id="fileBoardDeletePro" parameterType="int">
+		DELETE FROM SEQUENCE_FREEBOARDFILE
+		WHERE SEQ = #{seq}
+	</delete>
+	
+	<!-- <delete id="fileBoardDeletePro" parameterType="int">
+		DELETE FROM SEQUENCE_FREEBOARDFILE
+		WHERE SEQ = #{seq}
+	</delete> -->
+
+	
+	<update id="freeBoardModifyPro" parameterType="freeBoardDto">
+		UPDATE FREEBOARD 
+		SET NAME = #{name}, CONTENT = #{content}
+		WHERE NUM = #{NUM}
+	</update>
+	
+	<!-- 총 게시글 갯수 출력 -->
+ 	<select id="freeBoardCnt" resultType="freeBoardDto">
+		SELECT COUNT(NUM) FROM FREEBOARD WHERE 1=1 AND #{NUM} >0;
+	</select>
+	
+	<select id="freeBoardSelect" parameterType="freeBoardDto">
+		SELECT  NUM, TITLE, NAME, REGDATE, CONTENT FROM FREEBOARD
+		WHERE NUM = #{NUM}
+	</select>
+	
+	<select id="freeBoardDetailByNum" resultType="freeBoardDto" parameterType="int">
+		SELECT NUM, TITLE, NAME, TO_CHAR(REGDATE,'YYYY/MM/DD') REGDATE, CONTENT FROM FREEBOARD
+		WHERE NUM=#{ NUM}
+	</select>
+	
+	<select id="fileBoardDetailByNum" resultType="freeBoardFileDto" parameterType="int">
+		SELECT * FROM SEQUENCE_FREEBOARDFILE 
+		WHERE SEQ = #{seq}
+		
+	</select>
+	
+	<select id="freeBoardModifyByNum" resultType="freeBoardDto" parameterType="int">
+		SELECT NUM, TITLE, NAME, TO_CHAR(REGDATE,'YYYY/MM/DD') REGDATE, CONTENT, FILE_NAME FROM FREEBOARD
+		WHERE NUM=#{ NUM}
+	</select>
+	
+	<select id="listAll" resultType="freeBoardDto">
+		SELECT * FROM FREEBOARD
+	</select>
+	
+	<select id="listSearch" resultType="freeBoardDto" parameterType="ino.web.freeBoard.dto.SearchCriteria">
+		
+		select num, name, title, content, regdate
+		from (select num, name, title, content, regdate,
+		ROW_NUMBER() over(order by num desc) as rNum
+ 		from freeboard
+		<include refid="search"></include>
+		) freeboard
+		order by num desc
+		
+		<!-- select num, name, title, content, regdate
+		from (
+		select num, name, title, content, regdate,
+		row_number() over(order by num desc) as rNum
+		from freeboard
+	<include refid="search"></include>
+		) freeboard
+		where rNum between #{rowStart} and #{rowEnd}
+		order by num desc; -->
+	</select>
+	
+	<sql id="search">
+		<if test="searchType != null">
+  		<if test="searchType == 't'.toString()">where title like '%' || #{keyword} || '%'</if>
+  		<if test="searchType == 'n'.toString()">where name like '%' || #{keyword} || '%'</if>
+  		<if test="searchType == 'tn'.toString()">where (title like '%' || #{keyword} || '%') or (name like '%' || ${keyword} || '%')</if>
+ 		</if>
+	</sql>
+	
+	<select id="countSearch" resultType="int">
+		select count(NUM) from freeboard
+		<include refid="search"></include>
+			<![CDATA[
+			and NUM > 0
+			]]>
+	</select>
+	
+	
+</mapper>
